@@ -1,184 +1,249 @@
 import { useState } from "react";
-import { CheckIcon, CopyIcon, EyeIcon, LockIcon, PlusIcon } from "lucide-react";
-import type { AccountMeta } from "@dylan-wallet/core";
+import {
+  ArrowDownLeftIcon,
+  ArrowUpRightIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  CopyIcon,
+  EyeIcon,
+  LockIcon,
+  PlusIcon,
+} from "lucide-react";
 import { Button } from "@dylan-wallet/ui/components/button";
 import { Input } from "@dylan-wallet/ui/components/input";
-import { sendMessage, type WalletState } from "../../../lib/messaging";
+import { Spinner } from "@dylan-wallet/ui/components/spinner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@dylan-wallet/ui/components/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@dylan-wallet/ui/components/dialog";
+import { SeedPhraseDisplay } from "@dylan-wallet/ui/components/seed-phrase";
+import type { WalletState } from "../../../lib/messaging";
+import {
+  useAddAccount,
+  useBalances,
+  useExportMnemonic,
+  useLock,
+  useSelectAccount,
+} from "../../../lib/queries";
+import { formatBalance, truncateAddress } from "../../../lib/format";
+import { Send } from "./Send";
+import { Receive } from "./Receive";
 
-function truncate(address: string): string {
-  return `${address.slice(0, 6)}…${address.slice(-4)}`;
-}
-
-export function Home({ state, refresh }: { state: WalletState; refresh: () => void }) {
-  const [busy, setBusy] = useState(false);
-  const [copied, setCopied] = useState<string | null>(null);
+export function Home({ state }: { state: WalletState }) {
+  const [view, setView] = useState<"list" | "send" | "receive">("list");
+  const balancesQuery = useBalances(state);
+  const lock = useLock();
 
   const selected =
     state.accounts.find((a) => a.index === state.selectedIndex) ?? state.accounts[0];
 
-  async function addAccount() {
-    setBusy(true);
-    try {
-      await sendMessage({ type: "addAccount" });
-      refresh();
-    } finally {
-      setBusy(false);
-    }
+  if (view === "receive" && selected) {
+    return <Receive address={selected.address} onBack={() => setView("list")} />;
   }
-
-  async function select(index: number) {
-    await sendMessage({ type: "selectAccount", index });
-    refresh();
-  }
-
-  async function copy(address: string) {
-    await navigator.clipboard.writeText(address);
-    setCopied(address);
-    setTimeout(() => setCopied(null), 1200);
-  }
-
-  return (
-    <div className="flex flex-1 flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Accounts
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => sendMessage({ type: "lock" }).then(refresh)}
-        >
-          <LockIcon /> Lock
-        </Button>
-      </div>
-
-      {selected && (
-        <div className="rounded-md border bg-muted/40 p-3">
-          <div className="text-sm font-semibold">{selected.label}</div>
-          <button
-            type="button"
-            className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-            onClick={() => copy(selected.address)}
-          >
-            <span className="font-mono">{truncate(selected.address)}</span>
-            {copied === selected.address ? (
-              <CheckIcon className="size-3.5" />
-            ) : (
-              <CopyIcon className="size-3.5" />
-            )}
-          </button>
-        </div>
-      )}
-
-      <ul className="flex flex-col gap-1">
-        {state.accounts.map((account) => (
-          <AccountRow
-            key={account.index}
-            account={account}
-            selected={account.index === selected?.index}
-            onSelect={() => select(account.index)}
-          />
-        ))}
-      </ul>
-
-      <Button variant="outline" size="sm" onClick={addAccount} disabled={busy}>
-        <PlusIcon /> Add account
-      </Button>
-
-      <RevealPhrase className="mt-auto" />
-    </div>
-  );
-}
-
-function AccountRow({
-  account,
-  selected,
-  onSelect,
-}: {
-  account: AccountMeta;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={onSelect}
-        className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent ${
-          selected ? "bg-accent" : ""
-        }`}
-      >
-        <span className="font-medium">{account.label}</span>
-        <span className="font-mono text-xs text-muted-foreground">
-          {truncate(account.address)}
-        </span>
-      </button>
-    </li>
-  );
-}
-
-function RevealPhrase({ className }: { className?: string }) {
-  const [open, setOpen] = useState(false);
-  const [password, setPassword] = useState("");
-  const [phrase, setPhrase] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  async function reveal() {
-    setError(null);
-    try {
-      setPhrase(await sendMessage({ type: "exportMnemonic", password }));
-    } catch {
-      setError("Incorrect password");
-    }
-  }
-
-  function reset() {
-    setOpen(false);
-    setPassword("");
-    setPhrase(null);
-    setError(null);
-  }
-
-  if (!open) {
+  if (view === "send" && balancesQuery.data) {
     return (
-      <Button variant="ghost" size="sm" className={className} onClick={() => setOpen(true)}>
-        <EyeIcon /> Reveal recovery phrase
-      </Button>
+      <Send
+        balances={balancesQuery.data}
+        onBack={() => setView("list")}
+        onDone={() => setView("list")}
+      />
     );
   }
 
   return (
-    <div className={`flex flex-col gap-2 rounded-md border p-3 ${className ?? ""}`}>
-      {phrase ? (
-        <>
-          <p className="text-xs text-destructive">
-            Never share this phrase. Anyone with it controls your funds.
+    <div className="flex flex-1 flex-col gap-4">
+      <AccountMenu state={state} />
+
+      {selected && <CopyableAddress address={selected.address} />}
+
+      <div className="grid grid-cols-2 gap-2">
+        <Button onClick={() => setView("send")} disabled={!balancesQuery.data}>
+          <ArrowUpRightIcon /> Send
+        </Button>
+        <Button variant="outline" onClick={() => setView("receive")}>
+          <ArrowDownLeftIcon /> Receive
+        </Button>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-2">
+        <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          Assets
+        </span>
+        {balancesQuery.isPending ? (
+          <div className="flex justify-center py-6">
+            <Spinner />
+          </div>
+        ) : balancesQuery.isError ? (
+          <p className="text-sm text-destructive">
+            {balancesQuery.error.message || "Failed to load balances"}
           </p>
-          <p className="rounded bg-muted p-2 font-mono text-sm leading-relaxed">{phrase}</p>
-          <Button variant="outline" size="sm" onClick={reset}>
-            Hide
-          </Button>
-        </>
-      ) : (
-        <>
-          <Input
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Confirm password"
-          />
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <div className="flex gap-2">
-            <Button size="sm" onClick={reveal} disabled={password.length === 0}>
+        ) : (
+          <ul className="flex flex-col">
+            <AssetRow
+              symbol={balancesQuery.data.native.symbol}
+              name={balancesQuery.data.native.name}
+              amount={formatBalance(
+                balancesQuery.data.native.balance,
+                balancesQuery.data.native.decimals,
+              )}
+            />
+            {balancesQuery.data.tokens.map((t) => (
+              <AssetRow
+                key={t.address}
+                symbol={t.symbol}
+                name={t.name}
+                amount={formatBalance(t.balance, t.decimals)}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between border-t pt-3">
+        <RevealPhrase />
+        <Button variant="ghost" size="sm" onClick={() => lock.mutate()}>
+          <LockIcon /> Lock
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function AccountMenu({ state }: { state: WalletState }) {
+  const selectAccount = useSelectAccount();
+  const addAccount = useAddAccount();
+  const selected =
+    state.accounts.find((a) => a.index === state.selectedIndex) ?? state.accounts[0];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full justify-between normal-case tracking-normal"
+        >
+          {selected?.label ?? "Account"}
+          <ChevronDownIcon className="size-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
+        {state.accounts.map((account) => (
+          <DropdownMenuItem key={account.index} onClick={() => selectAccount.mutate(account.index)}>
+            <span className="flex-1">{account.label}</span>
+            <span className="font-mono text-xs text-muted-foreground">
+              {truncateAddress(account.address)}
+            </span>
+            {account.index === selected?.index && <CheckIcon className="ml-1 size-3.5" />}
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => addAccount.mutate(undefined)}>
+          <PlusIcon className="size-3.5" /> Add account
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function CopyableAddress({ address }: { address: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      onClick={() => {
+        void navigator.clipboard.writeText(address);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1200);
+      }}
+    >
+      <span className="font-mono">{truncateAddress(address)}</span>
+      {copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+    </button>
+  );
+}
+
+function AssetRow({ symbol, name, amount }: { symbol: string; name: string; amount: string }) {
+  return (
+    <li className="flex items-center justify-between border-b py-2.5 last:border-b-0">
+      <div className="flex flex-col">
+        <span className="text-sm font-medium">{symbol}</span>
+        <span className="text-xs text-muted-foreground">{name}</span>
+      </div>
+      <span className="font-mono text-sm">{amount}</span>
+    </li>
+  );
+}
+
+function RevealPhrase() {
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const exportMnemonic = useExportMnemonic();
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) {
+          setPassword("");
+          exportMnemonic.reset();
+        }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <EyeIcon /> Recovery phrase
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="w-[320px]">
+        <DialogHeader>
+          <DialogTitle>Recovery phrase</DialogTitle>
+          <DialogDescription>
+            Confirm your password to reveal your secret recovery phrase.
+          </DialogDescription>
+        </DialogHeader>
+        {exportMnemonic.data ? (
+          <div className="space-y-2">
+            <p className="text-xs text-destructive">
+              Never share this phrase. Anyone with it controls your funds.
+            </p>
+            <SeedPhraseDisplay phrase={exportMnemonic.data} />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Input
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Confirm password"
+            />
+            {exportMnemonic.isError && (
+              <p className="text-sm text-destructive">Incorrect password</p>
+            )}
+            <Button
+              className="w-full"
+              onClick={() => exportMnemonic.mutate(password)}
+              disabled={password.length === 0 || exportMnemonic.isPending}
+            >
               Reveal
             </Button>
-            <Button variant="ghost" size="sm" onClick={reset}>
-              Cancel
-            </Button>
           </div>
-        </>
-      )}
-    </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

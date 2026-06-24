@@ -1,15 +1,20 @@
 import { useState } from "react";
-import { ArrowLeftIcon, CopyIcon, PlusIcon, DownloadIcon } from "lucide-react";
+import { ArrowLeftIcon, DownloadIcon, PlusIcon } from "lucide-react";
 import { isValidRecoveryPhrase } from "@dylan-wallet/core";
 import { Button } from "@dylan-wallet/ui/components/button";
 import { Input } from "@dylan-wallet/ui/components/input";
 import { Label } from "@dylan-wallet/ui/components/label";
-import { Textarea } from "@dylan-wallet/ui/components/textarea";
-import { sendMessage } from "../../../lib/messaging";
+import { Stepper } from "@dylan-wallet/ui/components/stepper";
+import { StepTransition } from "@dylan-wallet/ui/components/step-transition";
+import {
+  SeedPhraseDisplay,
+  SeedPhraseInput,
+} from "@dylan-wallet/ui/components/seed-phrase";
+import { useCreateVault, useGenerateSeedPhrase } from "../../../lib/queries";
 
 const MIN_PASSWORD = 8;
 
-export function Onboarding({ onDone }: { onDone: () => void }) {
+export function Onboarding() {
   const [view, setView] = useState<"choose" | "create" | "import">("choose");
 
   if (view === "choose") {
@@ -34,17 +39,35 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     );
   }
 
+  return view === "create" ? (
+    <CreateFlow onExit={() => setView("choose")} />
+  ) : (
+    <ImportFlow onExit={() => setView("choose")} />
+  );
+}
+
+function passwordError(password: string, confirm: string): string | null {
+  if (password.length < MIN_PASSWORD)
+    return `Password must be at least ${MIN_PASSWORD} characters`;
+  if (password !== confirm) return "Passwords do not match";
+  return null;
+}
+
+function FlowHeader({
+  steps,
+  current,
+  onBack,
+}: {
+  steps: string[];
+  current: number;
+  onBack: () => void;
+}) {
   return (
-    <div className="flex flex-1 flex-col">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="mb-2 self-start"
-        onClick={() => setView("choose")}
-      >
+    <div className="mb-4 space-y-3">
+      <Button variant="ghost" size="sm" className="-ml-2" onClick={onBack}>
         <ArrowLeftIcon /> Back
       </Button>
-      {view === "create" ? <CreateFlow onDone={onDone} /> : <ImportFlow onDone={onDone} />}
+      <Stepper steps={steps} current={current} />
     </div>
   );
 }
@@ -87,155 +110,181 @@ function PasswordFields({
   );
 }
 
-function passwordError(password: string, confirm: string): string | null {
-  if (password.length < MIN_PASSWORD) return `Password must be at least ${MIN_PASSWORD} characters`;
-  if (password !== confirm) return "Passwords do not match";
-  return null;
-}
+const CREATE_STEPS = ["Password", "Backup"];
 
-function CreateFlow({ onDone }: { onDone: () => void }) {
-  const [step, setStep] = useState<"password" | "seed">("password");
+function CreateFlow({ onExit }: { onExit: () => void }) {
+  const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState<1 | -1>(1);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [seed, setSeed] = useState("");
   const [acknowledged, setAcknowledged] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
-  async function toSeedStep() {
+  const generate = useGenerateSeedPhrase();
+  const createVault = useCreateVault();
+
+  function go(next: number) {
+    setDirection(next > step ? 1 : -1);
+    setStep(next);
+  }
+
+  async function toBackup() {
     const err = passwordError(password, confirm);
     if (err) return setError(err);
     setError(null);
-    setBusy(true);
     try {
-      setSeed(await sendMessage({ type: "generateSeedPhrase" }));
-      setStep("seed");
+      setSeed(await generate.mutateAsync());
+      go(1);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
     }
   }
 
-  async function finish() {
-    setBusy(true);
-    try {
-      await sendMessage({ type: "createVault", password, mnemonic: seed });
-      onDone();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setBusy(false);
-    }
+  function finish() {
+    // On success, wallet state invalidates and <App> swaps to <Home>.
+    createVault.mutate({ password, mnemonic: seed });
   }
 
-  if (step === "password") {
-    return (
-      <div className="flex flex-1 flex-col gap-4">
-        <h2 className="text-base font-semibold">Set a password</h2>
-        <p className="text-sm text-muted-foreground">
-          This password encrypts your wallet on this device. It can&apos;t be recovered.
-        </p>
-        <PasswordFields
-          password={password}
-          confirm={confirm}
-          onPassword={setPassword}
-          onConfirm={setConfirm}
-        />
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        <Button className="mt-auto" onClick={toSeedStep} disabled={busy}>
-          Continue
-        </Button>
-      </div>
-    );
-  }
+  const busy = generate.isPending || createVault.isPending;
 
-  const words = seed.split(" ");
   return (
-    <div className="flex flex-1 flex-col gap-4">
-      <h2 className="text-base font-semibold">Back up your recovery phrase</h2>
-      <p className="text-sm text-muted-foreground">
-        Write these 12 words down in order and keep them somewhere safe. Anyone with this
-        phrase can take your funds.
-      </p>
-      <ol className="grid grid-cols-3 gap-2 rounded-md border bg-muted/40 p-3 text-sm">
-        {words.map((word, i) => (
-          <li key={i} className="flex gap-1.5">
-            <span className="text-muted-foreground tabular-nums">{i + 1}.</span>
-            <span className="font-medium">{word}</span>
-          </li>
-        ))}
-      </ol>
-      <Button
-        variant="outline"
-        size="sm"
-        className="self-start"
-        onClick={() => void navigator.clipboard.writeText(seed)}
-      >
-        <CopyIcon /> Copy
-      </Button>
-      <label className="flex items-start gap-2 text-sm">
-        <input
-          type="checkbox"
-          className="mt-0.5"
-          checked={acknowledged}
-          onChange={(e) => setAcknowledged(e.target.checked)}
-        />
-        I&apos;ve saved my recovery phrase
-      </label>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button className="mt-auto" onClick={finish} disabled={!acknowledged || busy}>
-        Create wallet
-      </Button>
+    <div className="flex flex-1 flex-col">
+      <FlowHeader
+        steps={CREATE_STEPS}
+        current={step}
+        onBack={() => (step === 0 ? onExit() : go(0))}
+      />
+      <StepTransition stepKey={step} direction={direction}>
+        {step === 0 ? (
+          <div className="flex flex-1 flex-col gap-4">
+            <p className="text-sm text-muted-foreground">
+              This password encrypts your wallet on this device. It can&apos;t be recovered.
+            </p>
+            <PasswordFields
+              password={password}
+              confirm={confirm}
+              onPassword={setPassword}
+              onConfirm={setConfirm}
+            />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button className="mt-auto" onClick={toBackup} disabled={busy}>
+              Continue
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col gap-4">
+            <p className="text-sm text-muted-foreground">
+              Write these words down in order and keep them safe. Anyone with this phrase
+              can take your funds.
+            </p>
+            <SeedPhraseDisplay phrase={seed} />
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={acknowledged}
+                onChange={(e) => setAcknowledged(e.target.checked)}
+              />
+              I&apos;ve saved my recovery phrase
+            </label>
+            {createVault.isError && (
+              <p className="text-sm text-destructive">{createVault.error.message}</p>
+            )}
+            <Button className="mt-auto" onClick={finish} disabled={!acknowledged || busy}>
+              Create wallet
+            </Button>
+          </div>
+        )}
+      </StepTransition>
     </div>
   );
 }
 
-function ImportFlow({ onDone }: { onDone: () => void }) {
+const IMPORT_STEPS = ["Phrase", "Password"];
+
+function ImportFlow({ onExit }: { onExit: () => void }) {
+  const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const [wordCount, setWordCount] = useState<12 | 24>(12);
   const [phrase, setPhrase] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
-  async function submit() {
-    const normalized = phrase.trim().replace(/\s+/g, " ");
-    if (!isValidRecoveryPhrase(normalized)) return setError("Invalid recovery phrase");
+  const createVault = useCreateVault();
+
+  function go(next: number) {
+    setDirection(next > step ? 1 : -1);
+    setStep(next);
+  }
+
+  function toPassword() {
+    if (!isValidRecoveryPhrase(phrase)) return setError("Invalid recovery phrase");
+    setError(null);
+    go(1);
+  }
+
+  function submit() {
     const err = passwordError(password, confirm);
     if (err) return setError(err);
     setError(null);
-    setBusy(true);
-    try {
-      await sendMessage({ type: "createVault", password, mnemonic: normalized });
-      onDone();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setBusy(false);
-    }
+    createVault.mutate({ password, mnemonic: phrase.trim().replace(/\s+/g, " ") });
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4">
-      <h2 className="text-base font-semibold">Import recovery phrase</h2>
-      <div className="space-y-1.5">
-        <Label htmlFor="phrase">Recovery phrase</Label>
-        <Textarea
-          id="phrase"
-          rows={3}
-          value={phrase}
-          onChange={(e) => setPhrase(e.target.value)}
-          placeholder="Enter your 12 or 24 word phrase"
-        />
-      </div>
-      <PasswordFields
-        password={password}
-        confirm={confirm}
-        onPassword={setPassword}
-        onConfirm={setConfirm}
+    <div className="flex flex-1 flex-col">
+      <FlowHeader
+        steps={IMPORT_STEPS}
+        current={step}
+        onBack={() => (step === 0 ? onExit() : go(0))}
       />
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button className="mt-auto" onClick={submit} disabled={busy}>
-        Import wallet
-      </Button>
+      <StepTransition stepKey={step} direction={direction}>
+        {step === 0 ? (
+          <div className="flex flex-1 flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Enter your phrase</span>
+              <div className="flex gap-1">
+                {([12, 24] as const).map((count) => (
+                  <Button
+                    key={count}
+                    size="xs"
+                    variant={wordCount === count ? "default" : "outline"}
+                    onClick={() => setWordCount(count)}
+                  >
+                    {count}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <SeedPhraseInput wordCount={wordCount} value={phrase} onChange={setPhrase} />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button className="mt-auto" onClick={toPassword}>
+              Continue
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col gap-4">
+            <p className="text-sm text-muted-foreground">
+              Set a password to encrypt the imported wallet on this device.
+            </p>
+            <PasswordFields
+              password={password}
+              confirm={confirm}
+              onPassword={setPassword}
+              onConfirm={setConfirm}
+            />
+            {(error || createVault.isError) && (
+              <p className="text-sm text-destructive">
+                {error ?? createVault.error?.message}
+              </p>
+            )}
+            <Button className="mt-auto" onClick={submit} disabled={createVault.isPending}>
+              Import wallet
+            </Button>
+          </div>
+        )}
+      </StepTransition>
     </div>
   );
 }

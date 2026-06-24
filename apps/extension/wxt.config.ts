@@ -12,5 +12,9 @@ export default defineConfig({
     description: "A non-custodial EVM wallet.",
     // `storage` for the encrypted vault + account metadata.
     permissions: ["storage"],
+    // Needed so the background service worker can call arbitrary EVM RPC
+    // endpoints (and, later, inject the provider into dapp pages) without being
+    // blocked by CORS. A wallet inherently talks to user-configurable hosts.
+    host_permissions: ["<all_urls>"],
   },
 });

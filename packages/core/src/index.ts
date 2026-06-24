@@ -26,3 +26,25 @@ export {
 
 // Recovery-phrase helpers (onboarding generate/validate).
 export { generateRecoveryPhrase, isValidRecoveryPhrase } from "./mnemonic.js";
+
+// RPC clients.
+export { getPublicClient, getWalletClient } from "./rpc/client.js";
+
+// Tokens: balances + registry.
+export type { TokenInfo, TokenBalance, NativeBalance } from "./tokens/types.js";
+export { getNativeBalance, getErc20Balances } from "./tokens/balances.js";
+export { TokenRegistry, DEFAULT_TOKENS } from "./tokens/registry.js";
+
+// Transfers: prepare / estimate / execute.
+export {
+  prepareTransfer,
+  estimateTransferFee,
+  executeTransfer,
+  type TransferAsset,
+  type TransferRequest,
+  type PreparedTransfer,
+  type FeeEstimate,
+} from "./tx/transfer.js";
+
+// Re-export common viem helpers used across the UI.
+export { isAddress, formatUnits, parseUnits, getAddress } from "viem";
