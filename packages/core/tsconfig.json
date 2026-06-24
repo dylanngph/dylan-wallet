@@ -1,0 +1,9 @@
+{
+  "extends": "@dylan-wallet/tsconfig/base.json",
+  "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "types": ["bun"]
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"]
+}

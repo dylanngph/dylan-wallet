@@ -2,25 +2,22 @@
   "name": "dylan-wallet",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "next": "16.2.9",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "dev:web": "bun --filter '@dylan-wallet/web' dev",
+    "build:web": "bun --filter '@dylan-wallet/web' build",
+    "dev:ext": "bun --filter '@dylan-wallet/extension' dev",
+    "build:ext": "bun --filter '@dylan-wallet/extension' build",
+    "test": "bun --filter '@dylan-wallet/core' test",
+    "lint": "bun --filter '@dylan-wallet/web' lint",
+    "typecheck": "bun --filter '*' typecheck"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.9",
-    "tailwindcss": "^4",
+    "shadcn": "^4.11.0",
     "typescript": "^5"
   },
   "ignoreScripts": [

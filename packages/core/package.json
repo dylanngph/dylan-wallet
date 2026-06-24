@@ -1,0 +1,22 @@
+{
+  "name": "@dylan-wallet/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@dylan-wallet/tsconfig": "workspace:*",
+    "@types/bun": "^1.3.14",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@scure/bip39": "^1.6.0",
+    "viem": "^2.53.1"
+  }
+}

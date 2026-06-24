@@ -1,0 +1,8 @@
+{
+  // Extends the config WXT generates into .wxt/ (run `wxt prepare`).
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "noUncheckedIndexedAccess": true
+  }
+}
