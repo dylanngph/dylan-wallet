@@ -1,13 +1,13 @@
 import { WalletIcon } from "lucide-react";
 import { Spinner } from "@dylan-wallet/ui/components/spinner";
-import { useWalletState } from "../../lib/queries";
+import { useWallet } from "../../context/wallet-context";
 import { Onboarding } from "./screens/Onboarding";
 import { Unlock } from "./screens/Unlock";
 import { Home } from "./screens/Home";
 import { NetworkSwitcher } from "./screens/NetworkSwitcher";
 
 export function App() {
-  const { data: state, isPending } = useWalletState();
+  const { state, isPending } = useWallet();
 
   return (
     <div className="flex min-h-[540px] w-[360px] flex-col bg-background text-foreground">
@@ -28,7 +28,7 @@ export function App() {
         ) : !state.unlocked ? (
           <Unlock />
         ) : (
-          <Home state={state} />
+          <Home />
         )}
       </main>
     </div>

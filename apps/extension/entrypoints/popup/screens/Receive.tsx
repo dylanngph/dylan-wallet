@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ArrowLeftIcon, CheckIcon, CopyIcon } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@dylan-wallet/ui/components/button";
 
 export function Receive({ address, onBack }: { address: string; onBack: () => void }) {
@@ -18,9 +19,14 @@ export function Receive({ address, onBack }: { address: string; onBack: () => vo
       </Button>
       <h2 className="text-base font-semibold">Receive</h2>
       <p className="text-sm text-muted-foreground">
-        Share this address to receive assets on the selected network.
+        Scan the code or share your address to receive assets on the selected network.
       </p>
-      <div className="border bg-muted/40 p-4">
+      <div className="flex justify-center">
+        <div className="border bg-white p-3">
+          <QRCodeSVG value={address} size={176} marginSize={0} />
+        </div>
+      </div>
+      <div className="border bg-muted/40 p-3">
         <p className="font-mono text-sm break-all">{address}</p>
       </div>
       <Button variant="outline" onClick={copy}>

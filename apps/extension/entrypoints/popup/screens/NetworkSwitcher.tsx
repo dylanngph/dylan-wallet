@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@dylan-wallet/ui/components/dropdown-menu";
-import { useChains, useSelectChain } from "../../../lib/queries";
+import { useChains, useSelectChain } from "../../../hooks/queries";
 import { AddChainDialog } from "./AddChainDialog";
 
 export function NetworkSwitcher({ selectedChainId }: { selectedChainId: number }) {

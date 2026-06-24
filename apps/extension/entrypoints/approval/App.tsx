@@ -3,13 +3,15 @@ import { WalletIcon } from "lucide-react";
 import { Button } from "@dylan-wallet/ui/components/button";
 import { Spinner } from "@dylan-wallet/ui/components/spinner";
 import type { ApprovalPayload, DappTx } from "../../lib/dapp-protocol";
-import { useApproval, useChains, useResolveApproval, useWalletState } from "../../lib/queries";
-import { formatBalance, truncateAddress } from "../../lib/format";
+import { useWallet } from "../../context/wallet-context";
+import { useApproval, useChains, useResolveApproval } from "../../hooks/queries";
+import { formatBalance, truncateAddress } from "../../utils/format";
+import { DetailRow } from "../../components/DetailRow";
 import { Unlock } from "../popup/screens/Unlock";
 
 export function ApprovalApp() {
   const id = new URLSearchParams(window.location.search).get("id") ?? "";
-  const { data: state } = useWalletState();
+  const { state } = useWallet();
   const approval = useApproval(id);
   const resolve = useResolveApproval();
 
@@ -66,6 +68,22 @@ function Center({ children }: { children: ReactNode }) {
   return <div className="flex flex-1 items-center justify-center">{children}</div>;
 }
 
+const TITLES: Record<ApprovalPayload["type"], string> = {
+  connect: "Connection request",
+  signMessage: "Signature request",
+  signTypedData: "Signature request",
+  sendTransaction: "Confirm transaction",
+  addChain: "Add network",
+};
+
+const CONFIRM_LABELS: Record<ApprovalPayload["type"], string> = {
+  connect: "Connect",
+  signMessage: "Sign",
+  signTypedData: "Sign",
+  sendTransaction: "Confirm",
+  addChain: "Add network",
+};
+
 function ApprovalView({
   payload,
   account,
@@ -81,17 +99,10 @@ function ApprovalView({
   onApprove: () => void;
   onReject: () => void;
 }) {
-  const titles: Record<ApprovalPayload["type"], string> = {
-    connect: "Connection request",
-    signMessage: "Signature request",
-    signTypedData: "Signature request",
-    sendTransaction: "Confirm transaction",
-  };
-
   return (
     <div className="flex flex-1 flex-col gap-4">
       <div className="space-y-1">
-        <h1 className="text-base font-semibold">{titles[payload.type]}</h1>
+        <h1 className="text-base font-semibold">{TITLES[payload.type]}</h1>
         <p className="font-mono text-xs break-all text-muted-foreground">{payload.origin}</p>
       </div>
 
@@ -114,6 +125,14 @@ function ApprovalView({
         {payload.type === "sendTransaction" && (
           <TransactionDetails tx={payload.tx} chainId={chainId} />
         )}
+        {payload.type === "addChain" && (
+          <div className="flex flex-col gap-2 text-sm">
+            <DetailRow label="Network" value={payload.chain.name} />
+            <DetailRow label="Chain ID" value={String(payload.chain.id)} />
+            <DetailRow label="Symbol" value={payload.chain.symbol} />
+            <DetailRow label="RPC URL" value={payload.chain.rpcUrl} mono />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-2">
@@ -121,7 +140,7 @@ function ApprovalView({
           Reject
         </Button>
         <Button onClick={onApprove} disabled={busy}>
-          {payload.type === "connect" ? "Connect" : payload.type === "sendTransaction" ? "Confirm" : "Sign"}
+          {CONFIRM_LABELS[payload.type]}
         </Button>
       </div>
     </div>
@@ -165,18 +184,9 @@ function TransactionDetails({ tx, chainId }: { tx: DappTx; chainId: number }) {
 
   return (
     <div className="flex flex-col gap-2 text-sm">
-      <Row label="To" value={tx.to ? truncateAddress(tx.to) : "Contract creation"} mono />
-      <Row label="Amount" value={`${formatBalance(valueWei, 18)} ${symbol}`} />
-      <Row label="Data" value={tx.data && tx.data !== "0x" ? "Contract interaction" : "None"} />
-    </div>
-  );
-}
-
-function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div className="flex items-center justify-between border-b py-2">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={mono ? "font-mono text-xs" : "font-medium"}>{value}</span>
+      <DetailRow label="To" value={tx.to ? truncateAddress(tx.to) : "Contract creation"} mono />
+      <DetailRow label="Amount" value={`${formatBalance(valueWei, 18)} ${symbol}`} />
+      <DetailRow label="Data" value={tx.data && tx.data !== "0x" ? "Contract interaction" : "None"} />
     </div>
   );
 }

@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { ArrowLeftIcon, DownloadIcon, PlusIcon } from "lucide-react";
+import { DownloadIcon, PlusIcon } from "lucide-react";
 import { isValidRecoveryPhrase } from "@dylan-wallet/core";
 import { Button } from "@dylan-wallet/ui/components/button";
 import { Input } from "@dylan-wallet/ui/components/input";
 import { Label } from "@dylan-wallet/ui/components/label";
-import { Stepper } from "@dylan-wallet/ui/components/stepper";
 import { StepTransition } from "@dylan-wallet/ui/components/step-transition";
 import {
   SeedPhraseDisplay,
   SeedPhraseInput,
 } from "@dylan-wallet/ui/components/seed-phrase";
-import { useCreateVault, useGenerateSeedPhrase } from "../../../lib/queries";
+import { FlowHeader } from "../../../components/FlowHeader";
+import { useCreateVault, useGenerateSeedPhrase } from "../../../hooks/queries";
 
 const MIN_PASSWORD = 8;
 
@@ -51,25 +51,6 @@ function passwordError(password: string, confirm: string): string | null {
     return `Password must be at least ${MIN_PASSWORD} characters`;
   if (password !== confirm) return "Passwords do not match";
   return null;
-}
-
-function FlowHeader({
-  steps,
-  current,
-  onBack,
-}: {
-  steps: string[];
-  current: number;
-  onBack: () => void;
-}) {
-  return (
-    <div className="mb-4 space-y-3">
-      <Button variant="ghost" size="sm" className="-ml-2" onClick={onBack}>
-        <ArrowLeftIcon /> Back
-      </Button>
-      <Stepper steps={steps} current={current} />
-    </div>
-  );
 }
 
 function PasswordFields({

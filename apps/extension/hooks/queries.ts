@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CustomChainInput } from "@dylan-wallet/core";
 import type { Address } from "viem";
-import { sendMessage, type SendAsset, type WalletState } from "./messaging";
+import { sendMessage, type SendAsset, type WalletState } from "../lib/messaging";
 
 /** Centralized query keys. Balances are keyed by account + chain so switching
  * either automatically refetches without manual invalidation. */

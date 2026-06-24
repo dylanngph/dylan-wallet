@@ -4,7 +4,6 @@ import {
   ArrowUpRightIcon,
   CheckIcon,
   ChevronDownIcon,
-  CopyIcon,
   EyeIcon,
   LockIcon,
   PlusIcon,
@@ -28,28 +27,29 @@ import {
   DialogTrigger,
 } from "@dylan-wallet/ui/components/dialog";
 import { SeedPhraseDisplay } from "@dylan-wallet/ui/components/seed-phrase";
-import type { WalletState } from "../../../lib/messaging";
+import { useWallet } from "../../../context/wallet-context";
 import {
   useAddAccount,
   useBalances,
   useExportMnemonic,
   useLock,
   useSelectAccount,
-} from "../../../lib/queries";
-import { formatBalance, truncateAddress } from "../../../lib/format";
+} from "../../../hooks/queries";
+import { formatBalance, truncateAddress } from "../../../utils/format";
+import { CopyableAddress } from "../../../components/CopyableAddress";
 import { Send } from "./Send";
 import { Receive } from "./Receive";
 
-export function Home({ state }: { state: WalletState }) {
+export function Home() {
+  const { state, selectedAccount } = useWallet();
   const [view, setView] = useState<"list" | "send" | "receive">("list");
   const balancesQuery = useBalances(state);
   const lock = useLock();
 
-  const selected =
-    state.accounts.find((a) => a.index === state.selectedIndex) ?? state.accounts[0];
+  if (!state) return null;
 
-  if (view === "receive" && selected) {
-    return <Receive address={selected.address} onBack={() => setView("list")} />;
+  if (view === "receive" && selectedAccount) {
+    return <Receive address={selectedAccount.address} onBack={() => setView("list")} />;
   }
   if (view === "send" && balancesQuery.data) {
     return (
@@ -63,9 +63,9 @@ export function Home({ state }: { state: WalletState }) {
 
   return (
     <div className="flex flex-1 flex-col gap-4">
-      <AccountMenu state={state} />
+      <AccountMenu />
 
-      {selected && <CopyableAddress address={selected.address} />}
+      {selectedAccount && <CopyableAddress address={selectedAccount.address} />}
 
       <div className="grid grid-cols-2 gap-2">
         <Button onClick={() => setView("send")} disabled={!balancesQuery.data}>
@@ -120,11 +120,10 @@ export function Home({ state }: { state: WalletState }) {
   );
 }
 
-function AccountMenu({ state }: { state: WalletState }) {
+function AccountMenu() {
+  const { state, selectedAccount } = useWallet();
   const selectAccount = useSelectAccount();
   const addAccount = useAddAccount();
-  const selected =
-    state.accounts.find((a) => a.index === state.selectedIndex) ?? state.accounts[0];
 
   return (
     <DropdownMenu>
@@ -134,18 +133,18 @@ function AccountMenu({ state }: { state: WalletState }) {
           size="sm"
           className="w-full justify-between normal-case tracking-normal"
         >
-          {selected?.label ?? "Account"}
+          {selectedAccount?.label ?? "Account"}
           <ChevronDownIcon className="size-3.5" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
-        {state.accounts.map((account) => (
+        {state?.accounts.map((account) => (
           <DropdownMenuItem key={account.index} onClick={() => selectAccount.mutate(account.index)}>
             <span className="flex-1">{account.label}</span>
             <span className="font-mono text-xs text-muted-foreground">
               {truncateAddress(account.address)}
             </span>
-            {account.index === selected?.index && <CheckIcon className="ml-1 size-3.5" />}
+            {account.index === selectedAccount?.index && <CheckIcon className="ml-1 size-3.5" />}
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
@@ -154,24 +153,6 @@ function AccountMenu({ state }: { state: WalletState }) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-}
-
-function CopyableAddress({ address }: { address: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      type="button"
-      className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      onClick={() => {
-        void navigator.clipboard.writeText(address);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1200);
-      }}
-    >
-      <span className="font-mono">{truncateAddress(address)}</span>
-      {copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
-    </button>
   );
 }
 

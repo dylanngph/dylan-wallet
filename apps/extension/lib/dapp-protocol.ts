@@ -58,12 +58,21 @@ export interface DappTx {
   gas?: string;
 }
 
+/** A chain a dapp asks to add via `wallet_addEthereumChain`. */
+export interface AddChainRequest {
+  id: number;
+  name: string;
+  rpcUrl: string;
+  symbol: string;
+}
+
 /** What an approval window is asked to authorize. */
 export type ApprovalPayload =
   | { type: "connect"; origin: string }
   | { type: "signMessage"; origin: string; address: Address; message: string }
   | { type: "signTypedData"; origin: string; address: Address; typedData: string }
-  | { type: "sendTransaction"; origin: string; tx: DappTx };
+  | { type: "sendTransaction"; origin: string; tx: DappTx }
+  | { type: "addChain"; origin: string; chain: AddChainRequest };
 
 /** EIP-1193 / EIP-1474 error codes. */
 export const ProviderErrors = {

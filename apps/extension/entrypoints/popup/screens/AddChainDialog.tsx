@@ -10,7 +10,7 @@ import {
 import { Button } from "@dylan-wallet/ui/components/button";
 import { Input } from "@dylan-wallet/ui/components/input";
 import { Label } from "@dylan-wallet/ui/components/label";
-import { useAddCustomChain } from "../../../lib/queries";
+import { useAddCustomChain } from "../../../hooks/queries";
 
 export function AddChainDialog({
   open,

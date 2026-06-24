@@ -10,8 +10,9 @@ export default defineConfig({
   manifest: {
     name: "Dylan Wallet",
     description: "A non-custodial EVM wallet.",
-    // `storage` for the encrypted vault + account metadata.
-    permissions: ["storage"],
+    // `storage` for the encrypted vault + account metadata; `alarms` for a
+    // service-worker-safe auto-lock timer that survives the SW being suspended.
+    permissions: ["storage", "alarms"],
     // Needed so the background service worker can call arbitrary EVM RPC
     // endpoints and inject the provider into dapp pages without being blocked
     // by CORS. A wallet inherently talks to user-configurable hosts.

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { LockIcon } from "lucide-react";
 import { Button } from "@dylan-wallet/ui/components/button";
 import { Input } from "@dylan-wallet/ui/components/input";
-import { useUnlock } from "../../../lib/queries";
+import { useUnlock } from "../../../hooks/queries";
 
 export function Unlock() {
   const [password, setPassword] = useState("");
