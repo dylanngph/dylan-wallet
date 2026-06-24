@@ -129,3 +129,21 @@ export function useSend() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["balances"] }),
   });
 }
+
+// ── Dapp approval window ─────────────────────────────────────────────────────
+
+export function useApproval(id: string) {
+  return useQuery({
+    queryKey: ["approval", id],
+    queryFn: () => sendMessage({ type: "getApproval", id }),
+    enabled: Boolean(id),
+    retry: false,
+  });
+}
+
+export function useResolveApproval() {
+  return useMutation({
+    mutationFn: (vars: { id: string; approved: boolean }) =>
+      sendMessage({ type: "resolveApproval", ...vars }),
+  });
+}

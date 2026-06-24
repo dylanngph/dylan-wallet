@@ -1,6 +1,7 @@
 import { browser } from "#imports";
 import type { AccountMeta, CustomChainInput } from "@dylan-wallet/core";
 import type { Address } from "viem";
+import type { ApprovalPayload } from "./dapp-protocol";
 
 /** Serializable chain summary (viem `Chain` objects carry functions). */
 export interface ChainSummary {
@@ -54,7 +55,9 @@ export type WalletRequest =
   | { type: "removeCustomChain"; chainId: number }
   | { type: "getBalances" }
   | { type: "estimateSend"; to: Address; amount: string; asset: SendAsset }
-  | { type: "send"; to: Address; amount: string; asset: SendAsset };
+  | { type: "send"; to: Address; amount: string; asset: SendAsset }
+  | { type: "getApproval"; id: string }
+  | { type: "resolveApproval"; id: string; approved: boolean };
 
 /** Background reply envelope. */
 export type WalletResponse = { ok: true; data: unknown } | { ok: false; error: string };
@@ -76,6 +79,8 @@ export interface WalletResultMap {
   getBalances: BalancesResult;
   estimateSend: { gas: string; total: string };
   send: { hash: string };
+  getApproval: ApprovalPayload;
+  resolveApproval: void;
 }
 
 /** Popup-side: send a request to the background and unwrap the result. */
