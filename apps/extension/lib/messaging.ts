@@ -49,6 +49,7 @@ export type WalletRequest =
   | { type: "addAccount"; label?: string }
   | { type: "selectAccount"; index: number }
   | { type: "exportMnemonic"; password: string }
+  | { type: "resetWallet" }
   | { type: "listChains" }
   | { type: "selectChain"; chainId: number }
   | { type: "addCustomChain"; input: CustomChainInput }
@@ -72,6 +73,7 @@ export interface WalletResultMap {
   addAccount: AccountMeta;
   selectAccount: void;
   exportMnemonic: string;
+  resetWallet: void;
   listChains: ChainSummary[];
   selectChain: void;
   addCustomChain: void;

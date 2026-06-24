@@ -98,6 +98,17 @@ describe("Keyring", () => {
     expect(kr.isUnlocked()).toBe(true);
   });
 
+  test("reset wipes the vault so the wallet is no longer initialized", async () => {
+    const kr = newKeyring();
+    await kr.createVault({ password: PASSWORD, mnemonic: VECTOR_MNEMONIC });
+    expect(await kr.isInitialized()).toBe(true);
+
+    await kr.reset();
+    expect(await kr.isInitialized()).toBe(false);
+    expect(kr.isUnlocked()).toBe(false);
+    expect(await kr.getAccounts()).toEqual([]);
+  });
+
   test("selected account defaults to first and follows selection", async () => {
     const kr = newKeyring();
     await kr.createVault({ password: PASSWORD, mnemonic: VECTOR_MNEMONIC });

@@ -1,6 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import "@fontsource-variable/onest";
+import "@fontsource-variable/jetbrains-mono";
 import { WalletProvider } from "../../context/wallet-context";
 import { ApprovalApp } from "./App";
 import "./style.css";

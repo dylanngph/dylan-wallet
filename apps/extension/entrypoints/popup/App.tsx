@@ -1,36 +1,29 @@
-import { WalletIcon } from "lucide-react";
 import { Spinner } from "@dylan-wallet/ui/components/spinner";
 import { useWallet } from "../../context/wallet-context";
 import { Onboarding } from "./screens/Onboarding";
 import { Unlock } from "./screens/Unlock";
-import { Home } from "./screens/Home";
-import { NetworkSwitcher } from "./screens/NetworkSwitcher";
+import { Wallet } from "./screens/Wallet";
 
 export function App() {
   const { state, isPending } = useWallet();
 
   return (
-    <div className="flex min-h-[540px] w-[360px] flex-col bg-background text-foreground">
-      <header className="flex items-center justify-between border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <WalletIcon className="size-4" />
-          <span className="text-sm font-semibold tracking-wide">Dylan Wallet</span>
+    <div className="relative flex h-[600px] w-[400px] flex-col overflow-hidden bg-background font-sans text-foreground">
+      {isPending || !state ? (
+        <div className="flex flex-1 items-center justify-center">
+          <Spinner />
         </div>
-        {state?.unlocked && <NetworkSwitcher selectedChainId={state.selectedChainId} />}
-      </header>
-      <main className="flex flex-1 flex-col p-4">
-        {isPending || !state ? (
-          <div className="flex flex-1 items-center justify-center">
-            <Spinner />
-          </div>
-        ) : !state.initialized ? (
+      ) : !state.initialized ? (
+        <div className="dw-scroll flex flex-1 flex-col overflow-y-auto p-5">
           <Onboarding />
-        ) : !state.unlocked ? (
+        </div>
+      ) : !state.unlocked ? (
+        <div className="flex flex-1 flex-col p-5">
           <Unlock />
-        ) : (
-          <Home />
-        )}
-      </main>
+        </div>
+      ) : (
+        <Wallet />
+      )}
     </div>
   );
 }

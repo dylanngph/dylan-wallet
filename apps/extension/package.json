@@ -15,6 +15,8 @@
   "dependencies": {
     "@dylan-wallet/core": "workspace:*",
     "@dylan-wallet/ui": "workspace:*",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@fontsource-variable/onest": "^5.2.11",
     "@tanstack/react-query": "^5.101.1",
     "lucide-react": "^1.21.0",
     "qrcode.react": "^4.2.0",

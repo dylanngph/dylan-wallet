@@ -1,39 +1,47 @@
 import { useState } from "react";
-import { DownloadIcon, PlusIcon } from "lucide-react";
 import { isValidRecoveryPhrase } from "@dylan-wallet/core";
-import { Button } from "@dylan-wallet/ui/components/button";
-import { Input } from "@dylan-wallet/ui/components/input";
-import { Label } from "@dylan-wallet/ui/components/label";
 import { StepTransition } from "@dylan-wallet/ui/components/step-transition";
 import {
   SeedPhraseDisplay,
   SeedPhraseInput,
 } from "@dylan-wallet/ui/components/seed-phrase";
+import { BrandMark } from "../../../components/BrandMark";
 import { FlowHeader } from "../../../components/FlowHeader";
 import { useCreateVault, useGenerateSeedPhrase } from "../../../hooks/queries";
 
 const MIN_PASSWORD = 8;
+const INPUT =
+  "w-full border border-border bg-card px-3.5 py-3 text-sm outline-none transition-colors focus:border-primary placeholder:text-muted-foreground";
+const PRIMARY =
+  "w-full bg-primary py-3.5 text-[15px] font-bold text-primary-foreground disabled:opacity-50";
 
 export function Onboarding() {
   const [view, setView] = useState<"choose" | "create" | "import">("choose");
 
   if (view === "choose") {
     return (
-      <div className="flex flex-1 flex-col justify-center gap-6 text-center">
-        <div className="space-y-1.5">
-          <h1 className="text-lg font-semibold">Welcome</h1>
-          <p className="text-sm text-muted-foreground">
-            Create a new wallet or import an existing recovery phrase. Your keys never
-            leave this device.
-          </p>
+      <div className="flex h-full flex-col">
+        <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
+          <BrandMark size={56} />
+          <div className="space-y-1.5">
+            <h1 className="text-xl font-bold">Welcome to DylanWallet</h1>
+            <p className="text-sm text-muted-foreground">
+              A non-custodial wallet. Create a new wallet or import an existing recovery phrase —
+              your keys never leave this device.
+            </p>
+          </div>
         </div>
-        <div className="flex flex-col gap-2">
-          <Button onClick={() => setView("create")}>
-            <PlusIcon /> Create a new wallet
-          </Button>
-          <Button variant="outline" onClick={() => setView("import")}>
-            <DownloadIcon /> Import recovery phrase
-          </Button>
+        <div className="space-y-2.5">
+          <button type="button" onClick={() => setView("create")} className={PRIMARY}>
+            Create a new wallet
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("import")}
+            className="w-full border border-border bg-card py-3.5 text-[15px] font-bold"
+          >
+            Import recovery phrase
+          </button>
         </div>
       </div>
     );
@@ -67,24 +75,30 @@ function PasswordFields({
   return (
     <>
       <div className="space-y-1.5">
-        <Label htmlFor="password">Password</Label>
-        <Input
+        <label htmlFor="password" className="text-xs font-semibold text-muted-foreground">
+          Password
+        </label>
+        <input
           id="password"
           type="password"
           autoComplete="new-password"
           value={password}
           onChange={(e) => onPassword(e.target.value)}
           placeholder={`At least ${MIN_PASSWORD} characters`}
+          className={INPUT}
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="confirm">Confirm password</Label>
-        <Input
+        <label htmlFor="confirm" className="text-xs font-semibold text-muted-foreground">
+          Confirm password
+        </label>
+        <input
           id="confirm"
           type="password"
           autoComplete="new-password"
           value={confirm}
           onChange={(e) => onConfirm(e.target.value)}
+          className={INPUT}
         />
       </div>
     </>
@@ -122,15 +136,10 @@ function CreateFlow({ onExit }: { onExit: () => void }) {
     }
   }
 
-  function finish() {
-    // On success, wallet state invalidates and <App> swaps to <Home>.
-    createVault.mutate({ password, mnemonic: seed });
-  }
-
   const busy = generate.isPending || createVault.isPending;
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex h-full flex-col">
       <FlowHeader
         steps={CREATE_STEPS}
         current={step}
@@ -149,18 +158,18 @@ function CreateFlow({ onExit }: { onExit: () => void }) {
               onConfirm={setConfirm}
             />
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button className="mt-auto" onClick={toBackup} disabled={busy}>
+            <button type="button" className={`mt-auto ${PRIMARY}`} onClick={toBackup} disabled={busy}>
               Continue
-            </Button>
+            </button>
           </div>
         ) : (
           <div className="flex flex-1 flex-col gap-4">
             <p className="text-sm text-muted-foreground">
-              Write these words down in order and keep them safe. Anyone with this phrase
-              can take your funds.
+              Write these words down in order and keep them safe. Anyone with this phrase can take
+              your funds.
             </p>
             <SeedPhraseDisplay phrase={seed} />
-            <label className="flex items-start gap-2 text-sm">
+            <label className="flex items-start gap-2.5 text-sm">
               <input
                 type="checkbox"
                 className="mt-0.5"
@@ -172,9 +181,14 @@ function CreateFlow({ onExit }: { onExit: () => void }) {
             {createVault.isError && (
               <p className="text-sm text-destructive">{createVault.error.message}</p>
             )}
-            <Button className="mt-auto" onClick={finish} disabled={!acknowledged || busy}>
+            <button
+              type="button"
+              className={`mt-auto ${PRIMARY}`}
+              onClick={() => createVault.mutate({ password, mnemonic: seed })}
+              disabled={!acknowledged || busy}
+            >
               Create wallet
-            </Button>
+            </button>
           </div>
         )}
       </StepTransition>
@@ -214,7 +228,7 @@ function ImportFlow({ onExit }: { onExit: () => void }) {
   }
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex h-full flex-col">
       <FlowHeader
         steps={IMPORT_STEPS}
         current={step}
@@ -225,24 +239,28 @@ function ImportFlow({ onExit }: { onExit: () => void }) {
           <div className="flex flex-1 flex-col gap-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Enter your phrase</span>
-              <div className="flex gap-1">
+              <div className="flex gap-1.5">
                 {([12, 24] as const).map((count) => (
-                  <Button
+                  <button
                     key={count}
-                    size="xs"
-                    variant={wordCount === count ? "default" : "outline"}
+                    type="button"
                     onClick={() => setWordCount(count)}
+                    className={`px-3 py-1.5 text-xs font-bold ${
+                      wordCount === count
+                        ? "bg-primary text-primary-foreground"
+                        : "border border-border bg-card"
+                    }`}
                   >
                     {count}
-                  </Button>
+                  </button>
                 ))}
               </div>
             </div>
             <SeedPhraseInput wordCount={wordCount} value={phrase} onChange={setPhrase} />
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button className="mt-auto" onClick={toPassword}>
+            <button type="button" className={`mt-auto ${PRIMARY}`} onClick={toPassword}>
               Continue
-            </Button>
+            </button>
           </div>
         ) : (
           <div className="flex flex-1 flex-col gap-4">
@@ -256,13 +274,16 @@ function ImportFlow({ onExit }: { onExit: () => void }) {
               onConfirm={setConfirm}
             />
             {(error || createVault.isError) && (
-              <p className="text-sm text-destructive">
-                {error ?? createVault.error?.message}
-              </p>
+              <p className="text-sm text-destructive">{error ?? createVault.error?.message}</p>
             )}
-            <Button className="mt-auto" onClick={submit} disabled={createVault.isPending}>
+            <button
+              type="button"
+              className={`mt-auto ${PRIMARY}`}
+              onClick={submit}
+              disabled={createVault.isPending}
+            >
               Import wallet
-            </Button>
+            </button>
           </div>
         )}
       </StepTransition>

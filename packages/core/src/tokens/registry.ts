@@ -70,4 +70,9 @@ export class TokenRegistry {
     );
     await this.#store.set(CUSTOM_TOKENS_KEY, this.#custom);
   }
+
+  /** Drop the in-memory cache (e.g. after the underlying store is wiped). */
+  invalidate(): void {
+    this.#custom = null;
+  }
 }

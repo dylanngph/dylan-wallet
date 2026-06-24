@@ -114,6 +114,14 @@ export function useExportMnemonic() {
   });
 }
 
+export function useResetWallet() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => sendMessage({ type: "resetWallet" }),
+    onSuccess: () => qc.invalidateQueries(),
+  });
+}
+
 export function useEstimateSend() {
   return useMutation({
     mutationFn: (vars: { to: Address; amount: string; asset: SendAsset }) =>

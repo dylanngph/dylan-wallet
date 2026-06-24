@@ -19,4 +19,9 @@ export class ExtensionStore implements KeyValueStore {
   async remove(key: string): Promise<void> {
     await browser.storage.local.remove(key);
   }
+
+  /** Wipe all extension-local storage (used by the reset-wallet flow). */
+  async clear(): Promise<void> {
+    await browser.storage.local.clear();
+  }
 }

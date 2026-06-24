@@ -1,7 +1,7 @@
 import { browser } from "#imports";
 import type { ApprovalPayload } from "../lib/dapp-protocol";
 
-const WIDTH = 380;
+const WIDTH = 400;
 const HEIGHT = 620;
 const MARGIN = 16;
 

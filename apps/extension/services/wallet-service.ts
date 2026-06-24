@@ -116,6 +116,14 @@ export class WalletService {
   addAccount(label?: string): Promise<AccountMeta> {
     return this.keyring.addAccount(label);
   }
+
+  /** Forgot-password / reset: wipe the vault and ALL wallet data for a clean slate. */
+  async resetWallet(): Promise<void> {
+    await this.keyring.reset();
+    await this.store.clear();
+    this.chains.invalidate();
+    this.tokens.invalidate();
+  }
   selectAccount(index: number) {
     return this.keyring.selectAccount(index);
   }

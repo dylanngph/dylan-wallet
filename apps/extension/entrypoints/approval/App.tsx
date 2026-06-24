@@ -1,12 +1,11 @@
 import type { ReactNode } from "react";
-import { WalletIcon } from "lucide-react";
-import { Button } from "@dylan-wallet/ui/components/button";
 import { Spinner } from "@dylan-wallet/ui/components/spinner";
 import type { ApprovalPayload, DappTx } from "../../lib/dapp-protocol";
 import { useWallet } from "../../context/wallet-context";
 import { useApproval, useChains, useResolveApproval } from "../../hooks/queries";
 import { formatBalance, truncateAddress } from "../../utils/format";
 import { DetailRow } from "../../components/DetailRow";
+import { BrandMark } from "../../components/BrandMark";
 import { Unlock } from "../popup/screens/Unlock";
 
 export function ApprovalApp() {
@@ -20,11 +19,11 @@ export function ApprovalApp() {
   }
 
   return (
-    <div className="flex min-h-[560px] w-[380px] flex-col bg-background text-foreground">
-      <header className="flex items-center gap-2 border-b px-4 py-3">
-        <WalletIcon className="size-4" />
-        <span className="text-sm font-semibold tracking-wide">Dylan Wallet</span>
-      </header>
+    <div className="relative flex min-h-[560px] w-[400px] flex-col bg-background font-sans text-foreground">
+      <div className="flex items-center gap-2 border-b border-hairline px-4 py-3">
+        <BrandMark size={24} />
+        <span className="text-sm font-bold tracking-tight">Dylan Wallet</span>
+      </div>
       <main className="flex flex-1 flex-col p-4">
         {!state ? (
           <Center>
@@ -42,17 +41,19 @@ export function ApprovalApp() {
               <p className="text-sm text-muted-foreground">
                 This request has expired or was already handled.
               </p>
-              <Button variant="outline" onClick={() => window.close()}>
+              <button
+                type="button"
+                onClick={() => window.close()}
+                className="border border-border bg-card px-4 py-2.5 text-sm font-bold"
+              >
                 Close
-              </Button>
+              </button>
             </div>
           </Center>
         ) : (
           <ApprovalView
             payload={approval.data}
-            account={
-              state.accounts.find((a) => a.index === state.selectedIndex)?.address ?? ""
-            }
+            account={state.accounts.find((a) => a.index === state.selectedIndex)?.address ?? ""}
             chainId={state.selectedChainId}
             busy={resolve.isPending}
             onApprove={() => decide(true)}
@@ -102,7 +103,7 @@ function ApprovalView({
   return (
     <div className="flex flex-1 flex-col gap-4">
       <div className="space-y-1">
-        <h1 className="text-base font-semibold">{TITLES[payload.type]}</h1>
+        <h1 className="text-base font-bold">{TITLES[payload.type]}</h1>
         <p className="font-mono text-xs break-all text-muted-foreground">{payload.origin}</p>
       </div>
 
@@ -110,13 +111,13 @@ function ApprovalView({
         {payload.type === "connect" && (
           <p className="text-sm text-muted-foreground">
             This site wants to connect to your wallet and view your account{" "}
-            <span className="font-mono text-foreground">{truncateAddress(account)}</span>.
-            It will not be able to move funds without your approval.
+            <span className="font-mono text-foreground">{truncateAddress(account)}</span>. It will
+            not be able to move funds without your approval.
           </p>
         )}
         {payload.type === "signMessage" && (
           <Field label="Message">
-            <pre className="max-h-48 overflow-auto border bg-muted/40 p-2 font-mono text-xs whitespace-pre-wrap">
+            <pre className="max-h-48 overflow-auto border border-border bg-secondary p-2 font-mono text-xs whitespace-pre-wrap">
               {payload.message}
             </pre>
           </Field>
@@ -135,13 +136,23 @@ function ApprovalView({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <Button variant="outline" onClick={onReject} disabled={busy}>
+      <div className="grid grid-cols-2 gap-2.5">
+        <button
+          type="button"
+          onClick={onReject}
+          disabled={busy}
+          className="border border-border bg-card py-3 text-sm font-bold disabled:opacity-50"
+        >
           Reject
-        </Button>
-        <Button onClick={onApprove} disabled={busy}>
+        </button>
+        <button
+          type="button"
+          onClick={onApprove}
+          disabled={busy}
+          className="bg-primary py-3 text-sm font-bold text-primary-foreground disabled:opacity-50"
+        >
           {CONFIRM_LABELS[payload.type]}
-        </Button>
+        </button>
       </div>
     </div>
   );
@@ -150,7 +161,7 @@ function ApprovalView({
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+      <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
         {label}
       </span>
       {children}
@@ -170,7 +181,7 @@ function TypedData({ json }: { json: string }) {
   }
   return (
     <Field label={primaryType ? `Typed data · ${primaryType}` : "Typed data"}>
-      <pre className="max-h-56 overflow-auto border bg-muted/40 p-2 font-mono text-xs whitespace-pre-wrap">
+      <pre className="max-h-56 overflow-auto border border-border bg-secondary p-2 font-mono text-xs whitespace-pre-wrap">
         {pretty}
       </pre>
     </Field>

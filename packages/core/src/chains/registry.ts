@@ -95,4 +95,10 @@ export class ChainRegistry {
     this.#custom = this.#custom.filter((c) => c.id !== id);
     await this.#store.set(CUSTOM_CHAINS_KEY, this.#custom);
   }
+
+  /** Drop the in-memory cache (e.g. after the underlying store is wiped). */
+  invalidate(): void {
+    this.#custom = [];
+    this.#loaded = false;
+  }
 }

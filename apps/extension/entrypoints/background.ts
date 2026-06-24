@@ -51,6 +51,10 @@ export default defineBackground(() => {
         return;
       case "exportMnemonic":
         return wallet.exportMnemonic(req.password);
+      case "resetWallet":
+        await wallet.resetWallet();
+        await dapp.emitAccountsChanged();
+        return;
       case "listChains":
         return wallet.listChains();
       case "selectChain":

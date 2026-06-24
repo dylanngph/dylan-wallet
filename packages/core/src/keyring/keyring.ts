@@ -89,6 +89,17 @@ export class Keyring {
     this.#signers.clear();
   }
 
+  /**
+   * Permanently delete the vault and account metadata, then lock. Used by the
+   * "forgot password" / reset-wallet flow — the password can't be recovered, so
+   * the user must re-import from their recovery phrase afterwards.
+   */
+  async reset(): Promise<void> {
+    await this.#store.remove(VAULT_KEY);
+    await this.#store.remove(META_KEY);
+    this.lock();
+  }
+
   async getAccounts(): Promise<AccountMeta[]> {
     return (await this.#readMeta()).accounts;
   }
